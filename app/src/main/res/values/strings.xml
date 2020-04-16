@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">RateUSD</string>
+    <string name="dollar_usa">Доллар США</string>
 </resources>

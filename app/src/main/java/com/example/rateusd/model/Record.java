@@ -11,6 +11,13 @@ public class Record {
     @Element(name = "Nominal")
     private String nominal;
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 
     public String getNominal() {
         return nominal;

@@ -1,13 +1,17 @@
 package com.example.rateusd;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 
+import com.example.rateusd.adapter.USDAdapter;
 import com.example.rateusd.model.Record;
 import com.example.rateusd.model.ValCurs;
 import com.example.rateusd.model.Valute;
@@ -37,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Record> recordArrayList;
     private Snackbar snackbar;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private RecyclerView recyclerView;
+    private USDAdapter adapter;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,16 +51,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        progressBar = findViewById(R.id.progress_bar);
         recordArrayList = new ArrayList<>();
 
         showRateUSD();
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                showRateUSD();
+            }
+        });
     }
 
-    private void showRateUSD() {
+    private Object showRateUSD() {
 
         RetrofitInstance.getInstance()
-                 //.getValCurs("15/03/2020", "15/04/2020", "R01235")
-                .getValCurs()
+                 .getValCurs("15/03/2020", "15/04/2020", "R01235")
+                //.getValCurs()
                 .enqueue(new Callback<ValCurs>() {
                     @Override
                     public void onResponse(Call<ValCurs> call, Response<ValCurs> response) {
@@ -63,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
                                 ValCurs valCurs = response.body();
                                 if (valCurs != null) {
                                     recordArrayList = (ArrayList<Record>) valCurs.getRecords();
+                                    fillRecyclerView();
                                 }
                             } else {
                                 Log.d("TAG", "Retrofit Response: " + response.errorBody().string());
@@ -80,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("LOG_ERROR", "Exception: " + t.getMessage());
                     }
                 });
+        return recordArrayList;
     }
 
     public void showError() {
@@ -87,5 +104,17 @@ public class MainActivity extends AppCompatActivity {
                 " Check the connection or try again later.", Snackbar.LENGTH_LONG)
                 .setAction("OK", (d) -> snackbar.dismiss());
         snackbar.show();
+    }
+
+    private void fillRecyclerView() {
+
+        recyclerView = findViewById(R.id.recycler_view);
+        adapter = new USDAdapter(recordArrayList);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(adapter);
+        progressBar.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
+
     }
 }
