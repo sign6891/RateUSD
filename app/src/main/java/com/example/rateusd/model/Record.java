@@ -1,5 +1,6 @@
 package com.example.rateusd.model;
 
+import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
@@ -10,6 +11,16 @@ public class Record {
     private String value;
     @Element(name = "Nominal")
     private String nominal;
+    @Attribute(name = "Date")
+    private String date;
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
 
     public String getValue() {
         return value;

@@ -5,7 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.os.AsyncTask;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,27 +14,19 @@ import android.widget.ProgressBar;
 import com.example.rateusd.adapter.USDAdapter;
 import com.example.rateusd.model.Record;
 import com.example.rateusd.model.ValCurs;
-import com.example.rateusd.model.Valute;
 import com.example.rateusd.service.RetrofitInstance;
-import com.example.rateusd.service.USDEndpoint;
 import com.google.android.material.snackbar.Snackbar;
 
-import org.simpleframework.xml.Element;
-import org.simpleframework.xml.ElementList;
-import org.simpleframework.xml.Root;
-
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Calendar;
+import java.util.Collections;
 
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
-import retrofit2.http.GET;
-import retrofit2.http.Path;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,6 +36,10 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private USDAdapter adapter;
     private ProgressBar progressBar;
+
+    private String dateFinish;
+    private String dateStart;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,9 +62,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Object showRateUSD() {
 
+        dateFormat();
+
         RetrofitInstance.getInstance()
-                 .getValCurs("15/03/2020", "15/04/2020", "R01235")
-                //.getValCurs()
+                 .getValCurs(dateStart, dateFinish, "R01235")
                 .enqueue(new Callback<ValCurs>() {
                     @Override
                     public void onResponse(Call<ValCurs> call, Response<ValCurs> response) {
@@ -92,14 +89,28 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<ValCurs> call, Throwable t) {
-                        showError();
+                        showNetworkError();
                         Log.d("LOG_ERROR", "Exception: " + t.getMessage());
                     }
                 });
         return recordArrayList;
     }
 
-    public void showError() {
+    private void dateFormat(){
+        //Получение даты
+        @SuppressLint("SimpleDateFormat")
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        Calendar calendar = Calendar.getInstance();
+        dateFinish = dateFormat.format(calendar.getTime());
+
+        //Получение даты за вычетом одного месяца
+        calendar.add(Calendar.MONTH, -1);
+        dateStart = dateFormat.format(calendar.getTime());
+    }
+
+    public void showNetworkError() {
+        progressBar.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
         snackbar = Snackbar.make(swipeRefreshLayout, "Connection problems, only cached data is shown." +
                 " Check the connection or try again later.", Snackbar.LENGTH_LONG)
                 .setAction("OK", (d) -> snackbar.dismiss());
@@ -109,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
     private void fillRecyclerView() {
 
         recyclerView = findViewById(R.id.recycler_view);
+        Collections.reverse(recordArrayList);
         adapter = new USDAdapter(recordArrayList);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);

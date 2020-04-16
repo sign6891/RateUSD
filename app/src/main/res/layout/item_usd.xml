@@ -16,7 +16,8 @@
             android:id="@+id/usd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1 $ ="
+            android:text="@string/_1"
+            android:textColor="@color/colorBlack"
             android:textSize="@dimen/spacing_max"
             android:layout_marginStart="@dimen/spacing_normal"
             android:layout_centerVertical="true"
@@ -28,7 +29,8 @@
             android:id="@+id/priceTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="74,2560"
+            android:text="@string/_74_2560"
+            android:textColor="@color/colorBlack"
             android:textStyle="bold"
             android:textSize="@dimen/spacing_max"
             android:layout_marginStart="@dimen/spacing_small"
@@ -38,18 +40,29 @@
             tools:ignore="RtlCompat,RtlHardcoded,SpUsage"
             android:layout_toRightOf="@+id/usd"/>
 
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/icons_ruble_24"
+            android:layout_marginStart="@dimen/spacing_micro"
+            android:layout_centerVertical="true"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginBottom="@dimen/spacing_small"
+            tools:ignore="ContentDescription,RtlCompat,RtlHardcoded,SpUsage"
+            android:layout_toRightOf="@+id/priceTextView"
+            />
+
         <TextView
             android:id="@+id/dateTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="22.03.2020"
             android:textSize="@dimen/spacing_normal"
             android:layout_marginEnd="24dp"
             android:layout_centerVertical="true"
             android:layout_marginTop="@dimen/spacing_small"
             android:layout_marginBottom="@dimen/spacing_small"
             android:layout_alignParentEnd="true"
-            tools:ignore="RtlCompat,SpUsage" />
+            tools:ignore="RelativeOverlap,RtlCompat,SpUsage" />
 
 
     </RelativeLayout>

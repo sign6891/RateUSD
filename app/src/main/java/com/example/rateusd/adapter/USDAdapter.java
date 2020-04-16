@@ -32,6 +32,7 @@ public class USDAdapter extends RecyclerView.Adapter<USDAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.priceTextView.setText(recordArrayList.get(position).getValue());
+        holder.dateTextView.setText(recordArrayList.get(position).getDate());
     }
 
     @Override
