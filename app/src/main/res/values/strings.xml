@@ -3,4 +3,6 @@
     <string name="dollar_usa">Доллар США</string>
     <string name="_1">1 $ =</string>
     <string name="_74_2560">74,2560</string>
+    <string name="new_price">New Price</string>
+    <string name="enter_price">Enter Price</string>
 </resources>

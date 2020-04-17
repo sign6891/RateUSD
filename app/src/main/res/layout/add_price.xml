@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_small"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/newPriceTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_normal"
+        android:lineSpacingExtra="@dimen/spacing_small"
+        android:text="@string/new_price"
+        android:textSize="@dimen/spacing_max"
+        android:textStyle="bold"
+        tools:ignore="SpUsage" />
+
+    <EditText
+        android:id="@+id/newPriceEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@android:color/transparent"
+        android:gravity="top"
+        android:hint="@string/enter_price"
+        android:textSize="24sp"
+        tools:ignore="Autofill,TextFields" />
+
+</LinearLayout>

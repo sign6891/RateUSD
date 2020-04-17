@@ -21,8 +21,8 @@
             android:textSize="@dimen/spacing_max"
             android:layout_marginStart="@dimen/spacing_normal"
             android:layout_centerVertical="true"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:layout_marginBottom="@dimen/spacing_small"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
             tools:ignore="RtlCompat,SpUsage" />
 
         <TextView
@@ -35,8 +35,6 @@
             android:textSize="@dimen/spacing_max"
             android:layout_marginStart="@dimen/spacing_small"
             android:layout_centerVertical="true"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:layout_marginBottom="@dimen/spacing_small"
             tools:ignore="RtlCompat,RtlHardcoded,SpUsage"
             android:layout_toRightOf="@+id/usd"/>
 
@@ -46,8 +44,6 @@
             android:src="@drawable/icons_ruble_24"
             android:layout_marginStart="@dimen/spacing_micro"
             android:layout_centerVertical="true"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:layout_marginBottom="@dimen/spacing_small"
             tools:ignore="ContentDescription,RtlCompat,RtlHardcoded,SpUsage"
             android:layout_toRightOf="@+id/priceTextView"
             />
@@ -59,8 +55,6 @@
             android:textSize="@dimen/spacing_normal"
             android:layout_marginEnd="24dp"
             android:layout_centerVertical="true"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:layout_marginBottom="@dimen/spacing_small"
             android:layout_alignParentEnd="true"
             tools:ignore="RelativeOverlap,RtlCompat,SpUsage" />
 
