@@ -2,19 +2,16 @@ package com.example.rateusd;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -38,12 +35,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static androidx.core.app.NotificationCompat.PRIORITY_HIGH;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,9 +56,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView priceTrackingTextView;
     private boolean isUpdate = false;
 
-    private NotificationManager notificationManager;
-    private static final String CHANNEL_ID = "CHANNEL_ID";
-
     private String setPrice;
 
 
@@ -77,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
 
         recordArrayList = new ArrayList<>();
-        notificationManager = (NotificationManager)getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
         showRateUSD();
 
@@ -94,37 +86,21 @@ public class MainActivity extends AppCompatActivity {
                 showRateUSD();
             }
         });
-    }
-
-    private void notification(){
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                .setAutoCancel(false)
-                .setSmallIcon(R.drawable.flag)// иконка
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(pendingIntent)
-                .setContentTitle("Заголовок")
-                .setContentText("Какой то текст")
-                .setPriority(PRIORITY_HIGH);
-        createChanelIfNeeded(notificationManager);
-        notificationManager.notify(1, notificationBuilder.build());
-    }
-
-    private void createChanelIfNeeded(NotificationManager manager) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID,
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            manager.createNotificationChannel(notificationChannel);
-        }
+        //Делать запрос в сеть раз в сутки в бекграунде
+        PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(MyWorker.class,
+                15, TimeUnit.MINUTES, 20, TimeUnit.MINUTES).build();
+        WorkManager.getInstance().getWorkInfoByIdLiveData(myWorkRequest.getId()).observe(this,
+                new Observer<WorkInfo>() {
+                    @Override
+                    public void onChanged(WorkInfo workInfo) {
+                        String status = workInfo.getState().name();
+                        priceTrackingTextView.setText(status);
+                    }
+                });
     }
 
 
-
-    private String addAndEditPrice(){
+    private String addAndEditPrice() {
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getApplicationContext());
         View view = layoutInflaterAndroid.inflate(R.layout.add_price, null);
 
@@ -136,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
         newPriceTitle.setText(!isUpdate ? "Add Price" : "Edit Price");
 
-        if (isUpdate && !TextUtils.isEmpty(priceTrackingTextView.getText())){
+        if (isUpdate && !TextUtils.isEmpty(priceTrackingTextView.getText())) {
             newPriceEditText.setText(priceTrackingTextView.getText());
         }
 
@@ -172,10 +148,10 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     alertDialog.dismiss();
                 }
-                if (!TextUtils.isEmpty(newPriceEditText.getText())){
+                if (!TextUtils.isEmpty(newPriceEditText.getText())) {
                     priceTrackingTextView.setText(newPriceEditText.getText());
                     isUpdate = true;
-                }else {
+                } else {
                     isUpdate = false;
                 }
             }
@@ -188,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
         dateFormat();
 
         RetrofitInstance.getInstance()
-                 .getValCurs(dateStart, dateFinish, "R01235")
+                .getValCurs(dateStart, dateFinish, "R01235")
                 .enqueue(new Callback<ValCurs>() {
                     @Override
                     public void onResponse(Call<ValCurs> call, Response<ValCurs> response) {
@@ -219,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         return recordArrayList;
     }
 
-    private void dateFormat(){
+    private void dateFormat() {
         //Получение даты
         @SuppressLint("SimpleDateFormat")
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
