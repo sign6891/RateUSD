@@ -1,17 +1,30 @@
 package com.example.rateusd;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -47,6 +60,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static androidx.core.app.NotificationCompat.PRIORITY_HIGH;
+
 public class MainActivity extends AppCompatActivity implements RateUSDView {
 
     private ArrayList<Record> recordArrayList;
@@ -60,11 +75,13 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
     private TextView priceTrackingTextView;
     private boolean isUpdate = false;
 
-    private String setPrice;
+    public String setPrice;
+    private SharedPreferences sharedPreferences;
+    private static final String PRICE_KEY = "price_key";
+    private static final String APP_PREFERENCES = "app_preferences";
+    public static final String KEY_TASK_DESC = "key_task_desc";
 
     private GetRateUSD getRateUSD;
-    //private ShowAlertDialog showAlertDialog;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,24 +92,50 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         priceTrackingTextView = findViewById(R.id.priceTrackingTextView);
         progressBar = findViewById(R.id.progress_bar);
+        sharedPreferences = getSharedPreferences(APP_PREFERENCES, MODE_PRIVATE);
 
-       // showAlertDialog = new ShowAlertDialog(this);
-
-        getRateUSD = new GetRateUSD(this);
-
-        PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(MyWorker.class,
-                15, TimeUnit.MINUTES, 20, TimeUnit.MINUTES).build();
+        loadSetRate();
 
         recordArrayList = new ArrayList<>();
+        getRateUSD = new GetRateUSD(this);
 
         getRateUSD.showRateUSD();
+
+        Data data = new Data.Builder()
+                .putString(KEY_TASK_DESC, priceTrackingTextView.getText().toString())
+                .build();
+
+        //Запускать процесс только при наличие Интернета
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        //Запускает процесс в указанный интервал(каждые (минимум)15 мин один раз в течении заданного промежутка)
+       /*PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(MyWorker.class,
+                15, TimeUnit.MINUTES, 20, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .setInputData(data)
+                .build();*/
+
+        OneTimeWorkRequest myWorkRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
+                .setConstraints(constraints)
+                //.setInputData(data)
+                .build();
+
+
+        OneTimeWorkRequest myWorkRequest2 = new OneTimeWorkRequest.Builder(MyWorkerPriceNetwork.class)
+                .setInputData(data)
+                .build();
+        //Запускает процесс в MyWorker
+        WorkManager.getInstance()
+                .beginWith(myWorkRequest)
+                .then(myWorkRequest2)
+                .enqueue();
+
 
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setPrice = addAndEditPrice();
-               // setPrice = showAlertDialog.addAndEditPrice(priceTrackingTextView.getText().toString());
-                //priceTrackingTextView.setText(setPrice);
+                addAndEditPrice();
             }
         });
 
@@ -103,19 +146,18 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
             }
         });
 
-        //Делать запрос в сеть раз в сутки в бекграунде
+        //отслеживает выполнение задачи в WorkManager
         WorkManager.getInstance().getWorkInfoByIdLiveData(myWorkRequest.getId()).observe(this,
                 new Observer<WorkInfo>() {
                     @Override
                     public void onChanged(WorkInfo workInfo) {
-                        String status = workInfo.getState().name();
-
+                        //String status = workInfo.getState().name();
+                        Log.d("MyWork", "onChanged: " + workInfo.getState().name());
                     }
                 });
     }
 
-
-    private String addAndEditPrice() {
+    private void addAndEditPrice() {
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getApplicationContext());
         View view = layoutInflaterAndroid.inflate(R.layout.add_price, null);
 
@@ -128,11 +170,12 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
         //Метод для появления нужной клавиатуры с ","
         getRateUSD.localeDecimalInput(newPriceEditText);
 
-        newPriceTitle.setText(!isUpdate ? "Add Price" : "Edit Price");
-
-        if (isUpdate && !TextUtils.isEmpty(priceTrackingTextView.getText())) {
+        if (!TextUtils.isEmpty(priceTrackingTextView.getText())) {
             newPriceEditText.setText(priceTrackingTextView.getText());
+            isUpdate = true;
         }
+
+        newPriceTitle.setText(!isUpdate ? "Add Price" : "Edit Price");
 
         alertDialogBuilderUserInput
                 .setCancelable(false)
@@ -146,6 +189,8 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
                     public void onClick(DialogInterface dialog, int which) {
                         if (isUpdate) {
                             priceTrackingTextView.setText("");
+                            setPrice = "";
+                            saveSetRate();
                             isUpdate = false;
                         } else {
                             dialog.cancel();
@@ -161,20 +206,21 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
             public void onClick(View v) {
                 if (TextUtils.isEmpty(newPriceEditText.getText().toString())) {
 
-                    Toast.makeText(MainActivity.this, "Enter car name!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Enter price!", Toast.LENGTH_SHORT).show();
                     return;
                 } else {
                     alertDialog.dismiss();
                 }
                 if (!TextUtils.isEmpty(newPriceEditText.getText())) {
                     priceTrackingTextView.setText(newPriceEditText.getText());
+                    setPrice = priceTrackingTextView.getText().toString();
+                    saveSetRate();
                     isUpdate = true;
                 } else {
                     isUpdate = false;
                 }
             }
         });
-        return priceTrackingTextView.getText().toString();
     }
 
     public void showNetworkError() {
@@ -196,5 +242,25 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
         recyclerView.setAdapter(adapter);
         progressBar.setVisibility(View.GONE);
         swipeRefreshLayout.setRefreshing(false);
+    }
+
+    @SuppressLint("ApplySharedPref")
+    private void saveSetRate() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(PRICE_KEY, setPrice);
+        editor.commit();
+    }
+
+    private void loadSetRate() {
+        setPrice = sharedPreferences.getString(PRICE_KEY, null);
+        if (setPrice != null) {
+            priceTrackingTextView.setText(setPrice);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        saveSetRate();
     }
 }
