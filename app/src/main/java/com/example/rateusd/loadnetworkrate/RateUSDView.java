@@ -1,4 +1,4 @@
-package com.example.rateusd;
+package com.example.rateusd.loadnetworkrate;
 
 import com.example.rateusd.model.Record;
 

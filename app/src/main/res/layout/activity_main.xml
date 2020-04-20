@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/swipeRefreshLayout"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/darker_gray"
         android:padding="@dimen/spacing_small">
-
 
         <RelativeLayout
             android:id="@+id/flag"
@@ -45,23 +42,23 @@
                 android:id="@+id/priceTrackingTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@+id/foto_flag"
-                android:layout_marginTop="@dimen/spacing_normal"
+                android:layout_below="@id/dollar"
                 android:layout_marginStart="70dp"
+                android:layout_marginTop="@dimen/spacing_normal"
+                android:layout_toRightOf="@+id/foto_flag"
                 android:textColor="@color/colorGreen"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                tools:ignore="RtlCompat,RtlHardcoded"
-                android:layout_below="@id/dollar"/>
+                tools:ignore="RtlCompat,RtlHardcoded" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/floatingActionButton"
                 android:layout_width="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_below="@id/dollar"
                 android:layout_height="wrap_content"
-                android:clickable="true"
+                android:layout_below="@id/dollar"
+                android:layout_alignParentEnd="true"
                 android:backgroundTint="@color/colorGreen"
+                android:clickable="true"
                 app:srcCompat="@drawable/ic_attach_money_black_48dp"
                 tools:ignore="KeyboardInaccessibleWidget,RelativeOverlap,RtlCompat,UnusedAttribute,VectorDrawableCompat" />
 
@@ -85,7 +82,6 @@
             android:indeterminateTintMode="src_atop"
             android:visibility="visible"
             tools:ignore="UnusedAttribute" />
-
 
     </RelativeLayout>
 

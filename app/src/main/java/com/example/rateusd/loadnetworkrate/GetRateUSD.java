@@ -1,4 +1,4 @@
-package com.example.rateusd;
+package com.example.rateusd.loadnetworkrate;
 
 import android.annotation.SuppressLint;
 import android.text.Editable;

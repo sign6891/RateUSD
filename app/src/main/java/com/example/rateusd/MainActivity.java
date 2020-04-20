@@ -29,6 +29,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.rateusd.adapter.USDAdapter;
+import com.example.rateusd.loadnetworkrate.GetRateUSD;
+import com.example.rateusd.loadnetworkrate.RateUSDView;
 import com.example.rateusd.model.Record;
 import com.example.rateusd.work.MyWorker;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -79,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
 
         getRateUSD.showRateUSD();
 
-        Log.d("WorkManagerTrue", "Последовательность: " + 1 + "onCreate");
         startWorker();
 
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
@@ -98,16 +99,15 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
     }
 
     private void startWorker() {
-        Log.d("WorkManagerTrue", "Последовательность: " + 2 + "startWorker");
+
         Data data = new Data.Builder()
                 .putString(KEY_TASK_DESC, priceTrackingTextView.getText().toString())
                 .build();
 
-        //Запускать процесс только при наличие Интернета
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
-        //Запускает процесс в указанный интервал(каждые (минимум)15 мин один раз в течении заданного промежутка)
+
         PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(
                 MyWorker.class,
                 24, TimeUnit.HOURS,

@@ -58,8 +58,6 @@
             android:layout_alignParentEnd="true"
             tools:ignore="RelativeOverlap,RtlCompat,SpUsage" />
 
-
     </RelativeLayout>
-
 
 </androidx.cardview.widget.CardView>

@@ -15,7 +15,6 @@ import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import com.example.rateusd.GetRateUSD;
 import com.example.rateusd.MainActivity;
 import com.example.rateusd.R;
 import com.example.rateusd.model.Record;
@@ -40,7 +39,6 @@ public class MyWorker extends Worker {
     private String dateFinish;
     private String dateStart;
     private String getPriceNetwork;
-    private static final String KEY_TASK_OUTPUT = "key_task_output";
     private static final String TAG = MyWorker.class.getName();
     private static final String CHANNEL_ID = "CHANNEL_ID";
 
@@ -52,15 +50,13 @@ public class MyWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        Log.d("WorkManagerTrue", "Последовательность: " + 5 + "doWork");
 
         loadRateUSD();
 
         Data data = getInputData();
         String getPriceThis = data.getString(MainActivity.KEY_TASK_DESC);
-        Log.d("WorkManagerTrue", "Последовательность: " + 7 + "loadRateUSD");
-        getDataNetwork(getPriceThis, getPriceNetwork);
 
+        getDataNetwork(getPriceThis, getPriceNetwork);
         return Result.success();
     }
 
@@ -75,7 +71,7 @@ public class MyWorker extends Worker {
             priceThis = priceThis.replace(',', '.');
             setRate = Double.parseDouble(priceThis);
         }
-        Log.d("WorkManagerTrue", "Последовательность: " + 8 + "getDataNetwork");
+        Log.d("WorkManagerTrue", "Последовательность: " + 6 + " getDataNetwork");
         if (currentRate > setRate) {
             displayNotification();
         }
@@ -83,7 +79,7 @@ public class MyWorker extends Worker {
 
     public void loadRateUSD() {
         dateFormat();
-        Log.d("WorkManagerTrue", "Последовательность: " + 6 + "loadRateUSD");
+
         USDEndpoint usdEndpoint = RetrofitInstance.getInstance();
         Call<ValCurs> call = usdEndpoint.getValCurs(dateStart, dateFinish, "R01235");
 
@@ -114,7 +110,7 @@ public class MyWorker extends Worker {
     }
 
     public void displayNotification() {
-        Log.d("WorkManagerTrue", "Последовательность: " + 9 + "displayNotification");
+
         NotificationManager notificationManager = (NotificationManager) getApplicationContext()
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
