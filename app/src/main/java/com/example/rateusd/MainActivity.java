@@ -1,35 +1,25 @@
 package com.example.rateusd;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.work.Constraints;
 import androidx.work.Data;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
-import android.text.method.DigitsKeyListener;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,27 +30,13 @@ import android.widget.Toast;
 
 import com.example.rateusd.adapter.USDAdapter;
 import com.example.rateusd.model.Record;
-import com.example.rateusd.model.ValCurs;
-import com.example.rateusd.service.RetrofitInstance;
+import com.example.rateusd.work.MyWorker;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static androidx.core.app.NotificationCompat.PRIORITY_HIGH;
 
 public class MainActivity extends AppCompatActivity implements RateUSDView {
 
@@ -77,9 +53,11 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
 
     public String setPrice;
     private SharedPreferences sharedPreferences;
+
     private static final String PRICE_KEY = "price_key";
     private static final String APP_PREFERENCES = "app_preferences";
     public static final String KEY_TASK_DESC = "key_task_desc";
+    public static final String TAG = "send_reminder_periodic";
 
     private GetRateUSD getRateUSD;
 
@@ -101,36 +79,8 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
 
         getRateUSD.showRateUSD();
 
-        Data data = new Data.Builder()
-                .putString(KEY_TASK_DESC, priceTrackingTextView.getText().toString())
-                .build();
-
-        //Запускать процесс только при наличие Интернета
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build();
-        //Запускает процесс в указанный интервал(каждые (минимум)15 мин один раз в течении заданного промежутка)
-       /*PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(MyWorker.class,
-                15, TimeUnit.MINUTES, 20, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .setInputData(data)
-                .build();*/
-
-        OneTimeWorkRequest myWorkRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
-                .setConstraints(constraints)
-                //.setInputData(data)
-                .build();
-
-
-        OneTimeWorkRequest myWorkRequest2 = new OneTimeWorkRequest.Builder(MyWorkerPriceNetwork.class)
-                .setInputData(data)
-                .build();
-        //Запускает процесс в MyWorker
-        WorkManager.getInstance()
-                .beginWith(myWorkRequest)
-                .then(myWorkRequest2)
-                .enqueue();
-
+        Log.d("WorkManagerTrue", "Последовательность: " + 1 + "onCreate");
+        startWorker();
 
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -145,17 +95,41 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
                 getRateUSD.showRateUSD();
             }
         });
+    }
 
-        //отслеживает выполнение задачи в WorkManager
-        WorkManager.getInstance().getWorkInfoByIdLiveData(myWorkRequest.getId()).observe(this,
-                new Observer<WorkInfo>() {
+    private void startWorker() {
+        Log.d("WorkManagerTrue", "Последовательность: " + 2 + "startWorker");
+        Data data = new Data.Builder()
+                .putString(KEY_TASK_DESC, priceTrackingTextView.getText().toString())
+                .build();
+
+        //Запускать процесс только при наличие Интернета
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        //Запускает процесс в указанный интервал(каждые (минимум)15 мин один раз в течении заданного промежутка)
+        PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(
+                MyWorker.class,
+                24, TimeUnit.HOURS,
+                PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS, TimeUnit.MILLISECONDS)
+                .setConstraints(constraints)
+                .setInitialDelay(10, TimeUnit.MINUTES)
+                .setInputData(data)
+                .addTag("send_reminder_periodic")
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(TAG, ExistingPeriodicWorkPolicy.KEEP, myWorkRequest);
+
+        WorkManager.getInstance().getWorkInfoByIdLiveData(myWorkRequest.getId())
+                .observe(this, new Observer<WorkInfo>() {
                     @Override
-                    public void onChanged(WorkInfo workInfo) {
-                        //String status = workInfo.getState().name();
-                        Log.d("MyWork", "onChanged: " + workInfo.getState().name());
+                    public void onChanged(@Nullable WorkInfo workInfo) {
+                        String status = workInfo.getState().name();
+                        Log.d("WorkManagerTrue", "onChanged " + Thread.currentThread().getName() + " " + status);
                     }
                 });
     }
+
 
     private void addAndEditPrice() {
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getApplicationContext());
@@ -233,7 +207,6 @@ public class MainActivity extends AppCompatActivity implements RateUSDView {
     }
 
     public void fillRecyclerView(ArrayList<Record> recordArrayList) {
-
         recyclerView = findViewById(R.id.recycler_view);
         Collections.reverse(recordArrayList);
         adapter = new USDAdapter(recordArrayList);

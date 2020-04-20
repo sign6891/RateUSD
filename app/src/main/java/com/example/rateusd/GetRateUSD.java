@@ -28,6 +28,7 @@ import retrofit2.Response;
 
 public class GetRateUSD {
 
+    private static final String TAG = GetRateUSD.class.getName();
     @Nullable
     private RateUSDView rateUSDView;
     private ArrayList<Record> recordArrayList = new ArrayList<>();
@@ -56,19 +57,18 @@ public class GetRateUSD {
                                     rateUSDView.fillRecyclerView(recordArrayList);
                                 }
                             } else {
-                                Log.d("TAG", "Retrofit Response: " + response.errorBody().string());
-                                Log.d("TAG", "Error message: " + response.raw().message());
-                                Log.d("TAG", "Error code: " + String.valueOf(response.raw().code()));
+                                Log.d(TAG, "Retrofit Response: " + response.errorBody().string());
+                                Log.d(TAG, "Error message: " + response.raw().message());
                             }
                         } catch (IOException e) {
-                            Log.d("LOG_ERROR", "Exception: " + e);
+                            Log.d(TAG, "Exception: " + e.getMessage());
                         }
                     }
 
                     @Override
                     public void onFailure(Call<ValCurs> call, Throwable t) {
                         rateUSDView.showNetworkError();
-                        Log.d("LOG_ERROR", "Exception: " + t.getMessage());
+                        Log.d(TAG, "Exception: " + t.getMessage());
                     }
                 });
         return recordArrayList;

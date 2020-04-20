@@ -28,6 +28,6 @@
         android:hint="@string/enter_price"
         android:inputType="numberDecimal"
         android:textSize="24sp"
-        tools:ignore="Autofill,TextFields" />
+        tools:ignore="Autofill" />
 
 </LinearLayout>

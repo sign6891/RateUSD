@@ -1,5 +1,6 @@
-package com.example.rateusd;
+package com.example.rateusd.work;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -14,24 +15,50 @@ import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.example.rateusd.GetRateUSD;
+import com.example.rateusd.MainActivity;
+import com.example.rateusd.R;
+import com.example.rateusd.model.Record;
+import com.example.rateusd.model.ValCurs;
+import com.example.rateusd.service.RetrofitInstance;
+import com.example.rateusd.service.USDEndpoint;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+
+import retrofit2.Call;
+import retrofit2.Response;
+
 import static androidx.core.app.NotificationCompat.PRIORITY_HIGH;
 
-public class MyWorkerPriceNetwork extends Worker {
+public class MyWorker extends Worker {
 
-    private static final String CHANNEL_ID = "CHANNEL_ID";
+    private ArrayList<Record> recordList = new ArrayList<>();
+    private String dateFinish;
+    private String dateStart;
+    private String getPriceNetwork;
     private static final String KEY_TASK_OUTPUT = "key_task_output";
+    private static final String TAG = MyWorker.class.getName();
+    private static final String CHANNEL_ID = "CHANNEL_ID";
 
-    public MyWorkerPriceNetwork(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+
+    public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
 
     @NonNull
     @Override
     public Result doWork() {
+        Log.d("WorkManagerTrue", "Последовательность: " + 5 + "doWork");
+
+        loadRateUSD();
 
         Data data = getInputData();
         String getPriceThis = data.getString(MainActivity.KEY_TASK_DESC);
-        String getPriceNetwork = data.getString(KEY_TASK_OUTPUT);
+        Log.d("WorkManagerTrue", "Последовательность: " + 7 + "loadRateUSD");
         getDataNetwork(getPriceThis, getPriceNetwork);
 
         return Result.success();
@@ -41,19 +68,53 @@ public class MyWorkerPriceNetwork extends Worker {
         double currentRate = 0;
         double setRate = 0;
 
-        if (priceNetwork != null && priceThis != null) {
+        if (!priceNetwork.isEmpty() && !priceThis.isEmpty()) {
             priceNetwork = priceNetwork.replace(',', '.');
             currentRate = Double.parseDouble(priceNetwork);
 
             priceThis = priceThis.replace(',', '.');
             setRate = Double.parseDouble(priceThis);
         }
+        Log.d("WorkManagerTrue", "Последовательность: " + 8 + "getDataNetwork");
         if (currentRate > setRate) {
             displayNotification();
         }
     }
 
+    public void loadRateUSD() {
+        dateFormat();
+        Log.d("WorkManagerTrue", "Последовательность: " + 6 + "loadRateUSD");
+        USDEndpoint usdEndpoint = RetrofitInstance.getInstance();
+        Call<ValCurs> call = usdEndpoint.getValCurs(dateStart, dateFinish, "R01235");
+
+        try {
+            Response<ValCurs> response = call.execute();
+            ValCurs valCurs = response.body();
+            if (valCurs != null) {
+                recordList = (ArrayList<Record>) valCurs.getRecords();
+                Collections.reverse(recordList);
+                recordList.get(0).getValue();
+                getPriceNetwork = recordList.get(0).getValue();
+            } else {
+                Log.d(TAG, "Retrofit Response: " + response.errorBody().string());
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void dateFormat() {
+        @SuppressLint("SimpleDateFormat")
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        Calendar calendar = Calendar.getInstance();
+        dateFinish = dateFormat.format(calendar.getTime());
+
+        calendar.add(Calendar.MONTH, -1);
+        dateStart = dateFormat.format(calendar.getTime());
+    }
+
     public void displayNotification() {
+        Log.d("WorkManagerTrue", "Последовательность: " + 9 + "displayNotification");
         NotificationManager notificationManager = (NotificationManager) getApplicationContext()
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
